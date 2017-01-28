@@ -13,6 +13,8 @@ import processing.video.*;
  * - press 't' to draw triangles
  * - press spacebar to take picture and use as fill color for each shape in grid
  * - press 'c' to clear picture and switch the fill color back to black
+ * - press 'g' to toggle gradual gradient size changes
+ * - press 's' to toggle stroke display 
  *
  * CREDIT:
  * This sketch is built off of the excellent Processing tutorials and sample code of 
@@ -31,16 +33,25 @@ color LINE_COLOR = color(0, 125); // color of drawn lines
 color PGRAPHICS_COLOR = color(0); // won't impact this sketch's visual outcome
 int LINE_LENGTH = 25; // length of drawn lines
 boolean reverseDrawing = false; // boolean to flip the drawing method (toggle with mouse)
-boolean drawEllipse = true; // boolean to determine shape (select with keyPress 'c')
-boolean drawTriangle = false; // boolean to determine shape (select with keyPress 't')
+boolean ellipseSelected = true; // boolean to determine shape (select with keyPress 'c')
+boolean triangleSelected = false; // boolean to determine shape (select with keyPress 't')
 boolean switchToBlack = false;
+
+// Globals for creating gradients
+color FOREGROUND_COLOR = color(255, 0, 0);
+color BACKGROUND_COLOR = color(0, 0, 255);
+int margin; // variable to determine when the right or topside have been reached with gradient
+int gradientCounter = 0;
+boolean changeGradientSize = true;
+boolean displayStroke = false;
 
 // PGraphics class can be used for offscreen rendering
 // Can use all of Processing's default drawing commands on a PGraphics
 PGraphics pg; // initialize PGraphics instance
 
 void setup() {
-  size(1280, 720);
+  size(1280, 720, P2D); // per vertex coloring requires an OpenGL renderer
+  smooth(16); // for better results
   
   video = new Capture(this, width, height, 30); //(parent, requestWidth, requestHeight, frameRate)
   video.start();
@@ -65,6 +76,7 @@ void draw() {
   float w = float(width)/gridHorizontal;
   float h = float(height)/gridVertical;
   float r = min(w,h); // assign the radius of the shape based on height or width depending on which is less in value
+  margin = max(gridVertical, gridHorizontal) * 2;
   
   // draw shapes to the screen
   background(255);
@@ -74,11 +86,11 @@ void draw() {
     for (int x=0; x<gridHorizontal; x++) {
       float s_x = x * w; // x position of shape on grid
       float s_y = y * h; // y position of shape on grid
-      color c = pg.get(int(s_x), int(s_y)); // get PGraphics color at this coordinate
-      boolean textDrawn = (c == PGRAPHICS_COLOR); // is the colro equal to PGRAPHICS_COLOR (aka is there text here)
+      //color c = pg.get(int(s_x), int(s_y)); // get PGraphics color at this coordinate
+      //boolean textDrawn = (c == PGRAPHICS_COLOR); // is the color equal to PGRAPHICS_COLOR (aka is there text here)
       // use the reverseDrawing boolean to flip the textDrawn boolean
       // thus in fact flipping the resulting displayed shapes
-      if (reverseDrawing ? !textDrawn : textDrawn) {
+      if (reverseDrawing ? !inText(int(s_x), int(s_y)) : inText(int(s_x), int(s_y))) {
         noStroke();
         // if new video frame is availabe change SHAPE_COLOR to the pixel color value at the position of the shape on the grid
         if (video.available() == true) {
@@ -89,11 +101,15 @@ void draw() {
         }
         fill(SHAPE_COLOR);
         // determine which shape to draw based on user input. ellipse is default.
-        if (drawEllipse) ellipse(s_x, s_y, r, r);
-        if (drawTriangle) triangle(s_x, s_y, s_x+w/2, s_y+h, s_x+w, s_y);
+        if (ellipseSelected) ellipse(s_x, s_y, r, r);
+        if (triangleSelected) triangle(s_x, s_y, s_x+w/2, s_y+h, s_x+w, s_y);
       } else {
         stroke(LINE_COLOR);
-        line(s_x, s_y, s_x + LINE_LENGTH, s_y + LINE_LENGTH);
+        //line(s_x, s_y, s_x + LINE_LENGTH, s_y + LINE_LENGTH);
+        beginShape(LINES);
+          vertex(s_x, s_y);
+          vertex(s_x + LINE_LENGTH, s_y + LINE_LENGTH);
+        endShape();
       }
     }
   }
@@ -106,13 +122,13 @@ void mousePressed() {
 void keyPressed() {
   // draw ellipses if 'e' is pressed
   if (key == 'e') {
-    drawEllipse = true;
-    drawTriangle = false;
+    ellipseSelected = true;
+    triangleSelected = false;
   }
   // draw triangles if 't' is pressed
   if (key == 't') {
-    drawEllipse = false;
-    drawTriangle = true;
+    ellipseSelected = false;
+    triangleSelected = true;
   }
   // capture video frame if spacebar is pressed
   if (key == ' ') {
@@ -124,3 +140,16 @@ void keyPressed() {
     switchToBlack = true;
   }
 }
+
+boolean inText(int x, int y) {
+  // check if point is inside text
+  color c = pg.get(x, y);
+  return (c == PGRAPHICS_COLOR);
+}
+
+
+//void drawGradient() {
+//  // dynamic gradient size (toggle with 'g' key)
+//  if (changeGradientSize) gradientCounter++;
+//  float gradientSize = 100 + sin(gradientCounter * 0.01) * 100;
+//}
