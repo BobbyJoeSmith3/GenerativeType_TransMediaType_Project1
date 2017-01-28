@@ -49,6 +49,8 @@ boolean displayStroke = false;
 // Can use all of Processing's default drawing commands on a PGraphics
 PGraphics pg; // initialize PGraphics instance
 
+
+
 void setup() {
   size(1280, 720, P2D); // per vertex coloring requires an OpenGL renderer
   smooth(16); // for better results
@@ -68,19 +70,69 @@ void setup() {
   pg.endDraw(); // finish drawing to the PGraphics
 }
 
+
+
 void draw() {
   // determine grid dimenstions based on the mouse position and calculate resulting grid settings
   int gridHorizontal = (int) map(mouseX, 0, width, 30, 200); // number of horizontal grid cells (based on mouseX)
   int gridVertical = (int) map(mouseY, 0, height, 15, 100); // number of vertical grid cells (based on mouseY)
-  // assign the width and heigth of each cell to a variables 'w' and 'h' based on mouse position
-  float w = float(width)/gridHorizontal;
-  float h = float(height)/gridVertical;
-  float r = min(w,h); // assign the radius of the shape based on height or width depending on which is less in value
+  
   margin = max(gridVertical, gridHorizontal) * 2;
   
   // draw shapes to the screen
   background(255);
   strokeWeight(0.5);
+  
+  drawShapes(gridHorizontal, gridVertical);
+
+}
+
+
+
+void mousePressed() {
+  reverseDrawing = !reverseDrawing; // toggle boolean for drawing method
+}
+
+
+
+void keyPressed() {
+  // draw ellipses if 'e' is pressed
+  if (key == 'e') {
+    ellipseSelected = true;
+    triangleSelected = false;
+  }
+  // draw triangles if 't' is pressed
+  if (key == 't') {
+    ellipseSelected = false;
+    triangleSelected = true;
+  }
+  // capture video frame if spacebar is pressed
+  if (key == ' ') {
+    video.read();
+    switchToBlack = false;
+  }
+  // revert SHAPE_COLOR back to black if 'c' is pressed
+  if (key == 'c') {
+    switchToBlack = true;
+  }
+}
+
+
+
+// check if point is inside text
+boolean inText(int x, int y) {
+  color c = pg.get(x, y); // get PGraphics color at this coordinate
+  // NOTE: if pixel image color = PGRAPHICS_COLOR it will read as if the text is in that position
+  return (c == PGRAPHICS_COLOR); // is the color equal to PGRAPHICS_COLOR (aka is there text here)
+}
+
+
+
+void drawShapes(int gridHorizontal, int gridVertical) {
+  // assign the width and heigth of each cell to a variables 'w' and 'h' based on mouse position
+  float w = float(width)/gridHorizontal;
+  float h = float(height)/gridVertical;
+  float r = min(w,h); // assign the radius of the shape based on height or width depending on which is less in value
   // create the grid
   for (int y=0; y<gridVertical; y++) {
     for (int x=0; x<gridHorizontal; x++) {
@@ -114,39 +166,6 @@ void draw() {
     }
   }
 }
-
-void mousePressed() {
-  reverseDrawing = !reverseDrawing; // toggle boolean for drawing method
-}
-
-void keyPressed() {
-  // draw ellipses if 'e' is pressed
-  if (key == 'e') {
-    ellipseSelected = true;
-    triangleSelected = false;
-  }
-  // draw triangles if 't' is pressed
-  if (key == 't') {
-    ellipseSelected = false;
-    triangleSelected = true;
-  }
-  // capture video frame if spacebar is pressed
-  if (key == ' ') {
-    video.read();
-    switchToBlack = false;
-  }
-  // revert SHAPE_COLOR back to black if 'c' is pressed
-  if (key == 'c') {
-    switchToBlack = true;
-  }
-}
-
-boolean inText(int x, int y) {
-  // check if point is inside text
-  color c = pg.get(x, y);
-  return (c == PGRAPHICS_COLOR);
-}
-
 
 //void drawGradient() {
 //  // dynamic gradient size (toggle with 'g' key)
