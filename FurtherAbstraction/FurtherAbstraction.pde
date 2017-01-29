@@ -31,13 +31,14 @@ Capture video;
 // int videoScale = 2;
 
 color SHAPE_COLOR = color(0); // color of drawn shapes
+color IMAGE_COLOR; // determined by color of pixel in photo
 color LINE_COLOR = color(0, 125); // color of drawn lines
 color PGRAPHICS_COLOR = color(0); // won't impact this sketch's visual outcome
 int LINE_LENGTH = 25; // length of drawn lines
 boolean reverseDrawing = false; // boolean to flip the drawing method (toggle with mouse)
 boolean ellipseSelected = true; // boolean to determine shape (select with keyPress 'c')
 boolean triangleSelected = false; // boolean to determine shape (select with keyPress 't')
-boolean switchToBlack = false; // boolean to turn fill color of shapes to black
+boolean colorDefaults = true; // boolean to turn fill color of shapes to black
 boolean drawShapesSelected = true; // boolean to trigger drawShapes function (select with keyPress 's')
 
 // Globals for creating gradients
@@ -45,6 +46,7 @@ color FOREGROUND_COLOR = color(255, 0, 0);
 color BACKGROUND_COLOR = color(0, 0, 255);
 int margin; // variable to determine when the right or topside have been reached with gradient
 int gradientCounter = 0;
+int selectGradientCounter = 0; // gradient background and foreground colors randomize after first selection
 boolean changeGradientSize = true;
 boolean displayStroke = false;
 boolean drawGradientSelected = false; // boolean to trigger drawGradients function (select with keyPress 'g')
@@ -105,11 +107,12 @@ void keyPressed() {
   // capture video frame if spacebar is pressed
   if (key == ' ') {
     video.read();
-    switchToBlack = false;
+    colorDefaults = false;
   }
-  // revert SHAPE_COLOR back to black if 'c' is pressed
+  // revert back to default colors 'c' is pressed
   if (key == 'c') {
-    switchToBlack = true;
+    colorDefaults = true;
+    revertToColorDefaults();
   }
   // add or remove stroke if 's' is pressed
   if (key == 'o') displayStroke = !displayStroke;
@@ -117,6 +120,12 @@ void keyPressed() {
   if (key == 'g') {
     drawGradientSelected = true;
     drawShapesSelected = false;
+    // randomize gradient colors after the first time gradient is selected
+    if ( selectGradientCounter > 0 ) {
+      FOREGROUND_COLOR = color(int(random(0, 256)), int(random(0, 256)), int(random(0, 256)));
+      BACKGROUND_COLOR = color(int(random(0, 256)), int(random(0, 256)), int(random(0, 256)));
+    }
+    selectGradientCounter++; 
   }
   // draw shapes if 's' is pressed
   if (key == 's') {
@@ -134,6 +143,13 @@ boolean inText(int x, int y) {
   color c = pg.get(x, y); // get PGraphics color at this coordinate
   // NOTE: if pixel image color = PGRAPHICS_COLOR it will read as if the text is in that position
   return (c == PGRAPHICS_COLOR); // is the color equal to PGRAPHICS_COLOR (aka is there text here)
+}
+
+
+void revertToColorDefaults() {
+  SHAPE_COLOR = color(0);
+  FOREGROUND_COLOR = color(255, 0, 0);
+  BACKGROUND_COLOR = color(0, 0, 255);
 }
 
 
@@ -160,12 +176,14 @@ void drawShapes() {
         noStroke();
         // if new video frame is availabe change SHAPE_COLOR to the pixel color value at the position of the shape on the grid
         if (video.available() == true) {
-          SHAPE_COLOR = video.get(int(s_x), int(s_y));
+          IMAGE_COLOR = video.get(int(s_x), int(s_y));
         } 
-        if (switchToBlack == true) {
-          SHAPE_COLOR = color(0);
+        if (colorDefaults == true) {
+          revertToColorDefaults();
+          fill(SHAPE_COLOR);
+        } else {
+          fill(IMAGE_COLOR);
         }
-        fill(SHAPE_COLOR);
         // determine which shape to draw based on user input. ellipse is default.
         if (ellipseSelected) ellipse(s_x, s_y, r, r);
         if (triangleSelected) triangle(s_x, s_y, s_x+w/2, s_y+h, s_x+w, s_y);
