@@ -95,29 +95,29 @@ void mousePressed() {
 
 void keyPressed() {
   // draw ellipses if 'e' is pressed
-  if (key == 'e') {
+  if (key == '2') {
     ellipseSelected = true;
     triangleSelected = false;
   }
   // draw triangles if 't' is pressed
-  if (key == 't') {
+  if (key == '3') {
     ellipseSelected = false;
     triangleSelected = true;
   }
   // capture video frame if spacebar is pressed
-  if (key == ' ') {
+  if (key == '4') {
     video.read();
     colorDefaults = false;
   }
   // revert back to default colors 'c' is pressed
-  if (key == 'c') {
+  if (key == '5') {
     colorDefaults = true;
     revertToColorDefaults();
   }
   // add or remove stroke if 's' is pressed
-  if (key == 'o') displayStroke = !displayStroke;
+  if (key == '6') displayStroke = !displayStroke;
   // draw gradient if 'g' is pressed
-  if (key == 'g') {
+  if (key == '7') {
     drawGradientSelected = true;
     drawShapesSelected = false;
     // randomize gradient colors after the first time gradient is selected
@@ -128,12 +128,12 @@ void keyPressed() {
     selectGradientCounter++; 
   }
   // draw shapes if 's' is pressed
-  if (key == 's') {
+  if (key == '8') {
     drawShapesSelected = true;
     drawGradientSelected = false;
   }
   // trigger flux gradient if 'f' is pressed
-  if (key == 'f') changeGradientSize = !changeGradientSize;
+  if (key == '9') changeGradientSize = !changeGradientSize;
 }
 
 
