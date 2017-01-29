@@ -199,6 +199,7 @@ void drawGradient() {
   int y = 0;
   boolean done = false;
   boolean insideShape = false;
+  
   while (!done) {
     // start somewhere left of the screen, each time a little bit further down
     y += gridVertical;
@@ -208,13 +209,9 @@ void drawGradient() {
     // keep going while the right or top side hasn't been reached
     while (vx < width+margin && vy > -margin) {
       // check if point is inside text
-      if (inText(vx, vy)) {
-        if (!insideShape) {
-          // end the current Shape when first entering the text
-          endShape();
-          insideShape = true;
-        }
-      } else {   // not inText
+      // use the reverseDrawing boolean to flip the textDrawn boolean
+      // thus in fact flipping the resulting displayed shapes
+      if (reverseDrawing ? !inText(vx, vy) : inText(vx, vy)) {
         if (insideShape) {
           // start a new Shape when exiting the text
           beginShape(QUAD_STRIP);
@@ -225,6 +222,12 @@ void drawGradient() {
         vertex(vx, vy);
         fill(BACKGROUND_COLOR);
         vertex(vx + gradientSize, vy + gradientSize);
+      } else {   // not inText
+        if (!insideShape) {
+          // end the current Shape when first entering the text
+          endShape();
+          insideShape = true;
+        }
       }
       //move right and upwards
       vx += gridHorizontal;

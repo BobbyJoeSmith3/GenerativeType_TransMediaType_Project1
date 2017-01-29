@@ -75,7 +75,7 @@ void draw() {
       float s_x = x * w; // x position of shape on grid
       float s_y = y * h; // y position of shape on grid
       color c = pg.get(int(s_x), int(s_y)); // get PGraphics color at this coordinate
-      boolean textDrawn = (c == PGRAPHICS_COLOR); // is the colro equal to PGRAPHICS_COLOR (aka is there text here)
+      boolean textDrawn = (c == PGRAPHICS_COLOR); // is the color equal to PGRAPHICS_COLOR (aka is there text here)
       // use the reverseDrawing boolean to flip the textDrawn boolean
       // thus in fact flipping the resulting displayed shapes
       if (reverseDrawing ? !textDrawn : textDrawn) {
