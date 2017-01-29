@@ -65,16 +65,26 @@
 //#define KEY_F11        0xCC
 //#define KEY_F12        0xCD
 
-#define KEY_0   0x30
-#define KEY_1   0x31
-#define KEY_2   0x32
-#define KEY_3   0x33
-#define KEY_4   0x34
-#define KEY_5   0x35
-#define KEY_6   0x36
-#define KEY_7   0x37
-#define KEY_8   0x38
-#define KEY_9   0x39
+//#define KEY_0   0x30
+//#define KEY_1   0x31
+//#define KEY_2   0x32
+//#define KEY_3   0x33
+//#define KEY_4   0x34
+//#define KEY_5   0x35
+//#define KEY_6   0x36
+//#define KEY_7   0x37
+//#define KEY_8   0x38
+//#define KEY_9   0x39
+
+#define KEY_S_LOWER   0x73
+#define KEY_E_LOWER   0x65
+#define KEY_T_LOWER   0x74
+#define KEY_SPACEBAR  0x20
+#define KEY_C_LOWER   0x63
+#define KEY_G_LOWER   0x67
+#define KEY_F_LOWER   0x66
+#define KEY_O_LOWER   0x6f
+#define KEY_R_LOWER   0x72
 
 //---------
 
@@ -85,50 +95,62 @@
 #define BOUNCE_WAIT 10
 #define BOUNCE_COUNT 1
 
-  //pins 2-9
-  //for buttons 1-2, up, down, left and right
+  //pins 2-10
+  //for keys s,e,t, ,c,g,f,o,r,btn
 int buttonPins[] = {
-  2,  //button 1 (yellow)
-  3,  //button 2 (orange)
-  4,  //button 3 (blue)
-  5,  //button 4 (green)
-  6,  //button 5 (yellow)
-  7,  //button 6 (orange)
-  8,  //button 7 (blue)
-  9   //button 8 (green)
+  2,  //key r (yellow)
+  3,  //key f (green)
+  4,  //key o (yellow)
+  5,  //key c (green)
+  6,  //key t (yellow)
+  7,  //key e (green)
+  8,  //key g (white)
+  9,  //key s (white)
+  10  //key   (white)
 };
 
 char buttonPresets[] = { 
-  KEY_2, //button 1 (yellow)
-  KEY_3, //button 2 (orange)
-  KEY_4, //button 3 (blue)
-  KEY_5, //button 4 (green)
-  KEY_6, //button 5 (yellow)
-  KEY_7, //button 6 (orange)
-  KEY_8, //button 7 (blue)
-  KEY_9  //button 8 (green)
-  
+  KEY_R_LOWER, //button 2
+  KEY_F_LOWER, //button 3
+  KEY_O_LOWER, //button 4
+  KEY_C_LOWER, //button 5
+  KEY_T_LOWER, //button 6
+  KEY_E_LOWER, //button 7
+  KEY_G_LOWER, //button 8
+  KEY_S_LOWER, //button 9
+  KEY_SPACEBAR //button 10 
 };
 
 //========== END CONFIGURATION SETTINGS ==========
 
 // Instantiate button state array
-boolean buttonPressed[8];
+boolean buttonPressed[9];
 // Instantiate a Bounce object array to store each debouncer in
-Bounce debouncers[8];
+Bounce debouncers[9];
 //Instantiate a counter array for each button to debounce count timer
-int debounceCount[8];
+int debounceCount[9];
+
+int Xin = A0; // X Input Pin
+int Yin = A1; // Y Input Pin
+int Xpos;     // Store value of analog pin reading for x coordinate
+int Ypos;     // Store value of analog pin reading for y coordinate
+byte Xmap;     // Mapped value of Xpos
+byte Ymap;     // Mapped value of Ypos
+byte mappedValues[2]; // Array with mapped x and y values
 
 void setup() {
   // put your setup code here, to run once:
-
- // open the serial port at 115200 baud rate
- Serial.begin(115200);
- // initialize control over the keyboard
- Keyboard.begin();
+  
+   // open the serial port at 115200 baud rate and wait for port to open
+   Serial.begin(115200);
+   while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB 
+   }
+   // initialize control over the keyboard
+   Keyboard.begin();
  
   // Create debounce instances :
-   for (int i = 0; i < 8; i++) {
+   for (int i = 0; i < 9; i++) {
      debouncers[i] = Bounce();
      debounceCount[i] = 0;
      pinMode(buttonPins[i],INPUT_PULLUP);
@@ -141,8 +163,20 @@ void setup() {
 }
 
 void loop() {
+  // put your main code here to run repeatedly:
+  Xpos = analogRead(Xin);
+  Ypos = analogRead(Yin);
   
-  for (int j = 0; j < 8; j++) { //iterate over each button (pin)
+  // Note: need to map analog x an y position readings to byte size
+  // Serial will only transfer bytes and strings
+  Xmap = byte(map(Xpos, -1023, 0, 1023, 255));
+  Ymap = byte(map(Ypos, -1023, 0, 1023, 255));
+  mappedValues[0] = Xmap;
+  mappedValues[1] = Ymap;
+  Serial.write(mappedValues, sizeof(mappedValues));
+  
+  // Debounce code:
+  for (int j = 0; j < 9; j++) { //iterate over each button (pin)
     
      (debouncers[j]).update(); //check current value
      int value = (debouncers[j]).read();

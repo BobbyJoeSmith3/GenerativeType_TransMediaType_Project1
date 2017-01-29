@@ -1,3 +1,5 @@
+import processing.serial.*;
+
 import processing.video.*;
 
 /*
@@ -17,6 +19,7 @@ import processing.video.*;
  * - press 'g' to toggle gradient
  * - press 'f' to toggle flux gradient
  * - press 'o' to toggle stroke display 
+ * - press 'r' to randomize text on screen
  *
  * CREDIT:
  * This sketch is built off of the excellent Processing tutorials and sample code of 
@@ -55,7 +58,7 @@ boolean drawGradientSelected = false; // boolean to trigger drawGradients functi
 // Can use all of Processing's default drawing commands on a PGraphics
 PGraphics pg; // initialize PGraphics instance
 
-
+Serial myPort; // Create object from Serial class
 
 void setup() {
   size(1280, 720, P2D); // per vertex coloring requires an OpenGL renderer
@@ -63,6 +66,10 @@ void setup() {
   
   video = new Capture(this, width, height, 30); //(parent, requestWidth, requestHeight, frameRate)
   video.start();
+  
+  //String portName = Serial.list()[0];
+  printArray(Serial.list());
+  myPort = new Serial(this, Serial.list()[1], 115200);
   
   pg = createGraphics(width, height, JAVA2D); // create a PGraphics the same size as the main sketch display window
   // Draw something to the created PGraphics instance called 'pg'.
@@ -79,6 +86,17 @@ void setup() {
 
 
 void draw() { 
+  // arduino data
+  byte[] inBuffer = new byte[2]; // Expand array size to the number of bytes expected
+  while (myPort.available() > 0) {
+    inBuffer = myPort.readBytes();
+    myPort.readBytes(inBuffer);
+    if (inBuffer != null) {
+      String myString = new String(inBuffer);
+      println(myString);
+    }    
+  }
+  
   // draw shapes to the screen
   if (displayStroke) { strokeWeight(0.5); stroke(0);} else { noStroke(); } // toggle with 'o' key 
   if (drawShapesSelected) {drawShapes(); } // toggle with 's' key
@@ -92,32 +110,37 @@ void mousePressed() {
 }
 
 
+void readJoystick() {
+  
+}
+
+
 
 void keyPressed() {
   // draw ellipses if 'e' is pressed
-  if (key == '2') {
+  if (key == 'e') {
     ellipseSelected = true;
     triangleSelected = false;
   }
   // draw triangles if 't' is pressed
-  if (key == '3') {
+  if (key == 't') {
     ellipseSelected = false;
     triangleSelected = true;
   }
   // capture video frame if spacebar is pressed
-  if (key == '4') {
+  if (key == ' ') {
     video.read();
     colorDefaults = false;
   }
   // revert back to default colors 'c' is pressed
-  if (key == '5') {
+  if (key == 'c') {
     colorDefaults = true;
     revertToColorDefaults();
   }
-  // add or remove stroke if 's' is pressed
-  if (key == '6') displayStroke = !displayStroke;
+  // add or remove stroke if 'o' is pressed
+  if (key == 'o') displayStroke = !displayStroke;
   // draw gradient if 'g' is pressed
-  if (key == '7') {
+  if (key == 'g') {
     drawGradientSelected = true;
     drawShapesSelected = false;
     // randomize gradient colors after the first time gradient is selected
@@ -128,12 +151,12 @@ void keyPressed() {
     selectGradientCounter++; 
   }
   // draw shapes if 's' is pressed
-  if (key == '8') {
+  if (key == 's') {
     drawShapesSelected = true;
     drawGradientSelected = false;
   }
   // trigger flux gradient if 'f' is pressed
-  if (key == '9') changeGradientSize = !changeGradientSize;
+  if (key == 'f') changeGradientSize = !changeGradientSize;
 }
 
 
