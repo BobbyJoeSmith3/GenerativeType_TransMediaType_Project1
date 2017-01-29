@@ -9,12 +9,14 @@ import processing.video.*;
  * USAGE:
  * - move the mouse around to change the grid dimensions
  * - click the mouse to flip the drawing method used for inside and outside of the text
+ * - press 's' to draw shapes (either elipse or triangle)
  * - press 'e' to draw elipses
  * - press 't' to draw triangles
  * - press spacebar to take picture and use as fill color for each shape in grid
  * - press 'c' to clear picture and switch the fill color back to black
- * - press 'g' to toggle gradual gradient size changes
- * - press 's' to toggle stroke display 
+ * - press 'g' to toggle gradient
+ * - press 'f' to toggle flux gradient
+ * - press 'o' to toggle stroke display 
  *
  * CREDIT:
  * This sketch is built off of the excellent Processing tutorials and sample code of 
@@ -35,7 +37,8 @@ int LINE_LENGTH = 25; // length of drawn lines
 boolean reverseDrawing = false; // boolean to flip the drawing method (toggle with mouse)
 boolean ellipseSelected = true; // boolean to determine shape (select with keyPress 'c')
 boolean triangleSelected = false; // boolean to determine shape (select with keyPress 't')
-boolean switchToBlack = false;
+boolean switchToBlack = false; // boolean to turn fill color of shapes to black
+boolean drawShapesSelected = true; // boolean to trigger drawShapes function (select with keyPress 's')
 
 // Globals for creating gradients
 color FOREGROUND_COLOR = color(255, 0, 0);
@@ -44,6 +47,7 @@ int margin; // variable to determine when the right or topside have been reached
 int gradientCounter = 0;
 boolean changeGradientSize = true;
 boolean displayStroke = false;
+boolean drawGradientSelected = false; // boolean to trigger drawGradients function (select with keyPress 'g')
 
 // PGraphics class can be used for offscreen rendering
 // Can use all of Processing's default drawing commands on a PGraphics
@@ -72,19 +76,11 @@ void setup() {
 
 
 
-void draw() {
-  // determine grid dimenstions based on the mouse position and calculate resulting grid settings
-  int gridHorizontal = (int) map(mouseX, 0, width, 30, 200); // number of horizontal grid cells (based on mouseX)
-  int gridVertical = (int) map(mouseY, 0, height, 15, 100); // number of vertical grid cells (based on mouseY)
-  
-  margin = max(gridVertical, gridHorizontal) * 2;
-  
+void draw() { 
   // draw shapes to the screen
-  background(255);
-  strokeWeight(0.5);
-  
-  drawShapes(gridHorizontal, gridVertical);
-
+  if (displayStroke) { strokeWeight(0.5); stroke(0);} else { noStroke(); } // toggle with 'o' key 
+  if (drawShapesSelected) {drawShapes(); } // toggle with 's' key
+  if (drawGradientSelected) {drawGradient(); } // toggle with 'g' key
 }
 
 
@@ -115,6 +111,20 @@ void keyPressed() {
   if (key == 'c') {
     switchToBlack = true;
   }
+  // add or remove stroke if 's' is pressed
+  if (key == 'o') displayStroke = !displayStroke;
+  // draw gradient if 'g' is pressed
+  if (key == 'g') {
+    drawGradientSelected = true;
+    drawShapesSelected = false;
+  }
+  // draw shapes if 's' is pressed
+  if (key == 's') {
+    drawShapesSelected = true;
+    drawGradientSelected = false;
+  }
+  // trigger flux gradient if 'f' is pressed
+  if (key == 'f') changeGradientSize = !changeGradientSize;
 }
 
 
@@ -128,7 +138,11 @@ boolean inText(int x, int y) {
 
 
 
-void drawShapes(int gridHorizontal, int gridVertical) {
+void drawShapes() {
+  // determine grid dimensions based on the mouse position and calculate resulting grid settings
+  int gridHorizontal = (int) map(mouseX, 0, width, 30, 200); // number of horizontal grid cells (based on mouseX)
+  int gridVertical = (int) map(mouseY, 0, height, 15, 100); // number of vertical grid cells (based on mouseY)
+  background(255);
   // assign the width and heigth of each cell to a variables 'w' and 'h' based on mouse position
   float w = float(width)/gridHorizontal;
   float h = float(height)/gridVertical;
@@ -167,8 +181,57 @@ void drawShapes(int gridHorizontal, int gridVertical) {
   }
 }
 
-//void drawGradient() {
-//  // dynamic gradient size (toggle with 'g' key)
-//  if (changeGradientSize) gradientCounter++;
-//  float gradientSize = 100 + sin(gradientCounter * 0.01) * 100;
-//}
+
+
+void drawGradient() {
+  // determine grid dimensions based on the mouse position and calculate resulting grid settings
+  int gridHorizontal = (int) map(mouseX, 0, width, 10, 100); // number of horizontal grid cells (based on mouseX)
+  int gridVertical = (int) map(mouseY, 0, height, 10, 100); // number of vertical grid cells (based on mouseY)
+  background(BACKGROUND_COLOR);
+  int margin = max(gridVertical, gridHorizontal) *2;
+  
+  // dynamic gradient size (toggle with 'g' key)
+  if (changeGradientSize) gradientCounter++;
+  float gradientSize = 100 + sin(gradientCounter * 0.01) * 100;
+  
+  // create diagonal lines covering the whole screen using two while loops
+  // some initial variables needed within the while loops
+  int y = 0;
+  boolean done = false;
+  boolean insideShape = false;
+  while (!done) {
+    // start somewhere left of the screen, each time a little bit further down
+    y += gridVertical;
+    int vx = -margin;
+    int vy = y;
+    beginShape(QUAD_STRIP);
+    // keep going while the right or top side hasn't been reached
+    while (vx < width+margin && vy > -margin) {
+      // check if point is inside text
+      if (inText(vx, vy)) {
+        if (!insideShape) {
+          // end the current Shape when first entering the text
+          endShape();
+          insideShape = true;
+        }
+      } else {   // not inText
+        if (insideShape) {
+          // start a new Shape when exiting the text
+          beginShape(QUAD_STRIP);
+          insideShape = false;
+        }
+        // when outside text, add two vertices
+        fill (FOREGROUND_COLOR);
+        vertex(vx, vy);
+        fill(BACKGROUND_COLOR);
+        vertex(vx + gradientSize, vy + gradientSize);
+      }
+      //move right and upwards
+      vx += gridHorizontal;
+      vy -= gridVertical;
+      // if we are beyond the right and beyond the bottom of the screen, stop the main while loop
+      if (vx > width && vy > height) done = true; // escape!
+    }
+    endShape();
+  } 
+}
