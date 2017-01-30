@@ -68,17 +68,6 @@
 //#define KEY_F11        0xCC
 //#define KEY_F12        0xCD
 
-//#define KEY_0   0x30
-//#define KEY_1   0x31
-//#define KEY_2   0x32
-//#define KEY_3   0x33
-//#define KEY_4   0x34
-//#define KEY_5   0x35
-//#define KEY_6   0x36
-//#define KEY_7   0x37
-//#define KEY_8   0x38
-//#define KEY_9   0x39
-
 #define KEY_S_LOWER   0x73
 #define KEY_V_LOWER   0x76
 #define KEY_T_LOWER   0x74
@@ -157,47 +146,42 @@ void setup() {
   pinMode(switchPin, INPUT_PULLUP);    // the switch pin
   pinMode(ledPin, OUTPUT);      // the LED pin
   
-   // open the serial port at 115200 baud rate and wait for port to open
-//   Serial.begin(115200);
-//   while (!Serial) {
-//    ; // wait for serial port to connect. Needed for native USB 
-//   }
-   // initialize control over the mouse
-   Mouse.begin();
+  // initialize control over the mouse
+  Mouse.begin();
    
-   // initialize control over the keyboard
-   Keyboard.begin();
+  // initialize control over the keyboard
+  Keyboard.begin();
  
-   // Create debounce instances :
-   for (int i = 0; i < 8; i++) {
-     debouncers[i] = Bounce();
-     debounceCount[i] = 0;
-     pinMode(buttonPins[i],INPUT_PULLUP);
-     (debouncers[i]).attach(buttonPins[i]);
-     (debouncers[i]).interval(BOUNCE_WAIT);
-        delay(100);
-     buttonPressed[i] = false; 
+  // Create debounce instances :
+  for (int i = 0; i < 8; i++) {
+    debouncers[i] = Bounce();
+    debounceCount[i] = 0;
+    pinMode(buttonPins[i],INPUT_PULLUP);
+    (debouncers[i]).attach(buttonPins[i]);
+    (debouncers[i]).interval(BOUNCE_WAIT);
+       delay(100);
+    buttonPressed[i] = false; 
    }
 
-   // Create debounce instance for mouseButton:
-   mouseBtnDebouncer = Bounce();  // instantiates a bounce object
-   mouseDebounceCount = 0;
-   pinMode(mouseButton, INPUT_PULLUP);  // sets pinmode for mouseButton
-   // Set the pin and match the internal state to that of the pin:
-   // NOTE: Only attach the pin after settin gthe pin up (internal pull-up)
-   mouseBtnDebouncer.attach(mouseButton);
-   mouseBtnDebouncer.interval(BOUNCE_WAIT);
-   delay(100);
-   mouseBtnPressed = false;  
+  // Create debounce instance for mouseButton:
+  mouseBtnDebouncer = Bounce();  // instantiates a bounce object
+  mouseDebounceCount = 0;
+  pinMode(mouseButton, INPUT_PULLUP);  // sets pinmode for mouseButton
+  // Set the pin and match the internal state to that of the pin:
+  // NOTE: Only attach the pin after settin gthe pin up (internal pull-up)
+  mouseBtnDebouncer.attach(mouseButton);
+  mouseBtnDebouncer.interval(BOUNCE_WAIT);
+  //delay(100);
+  mouseBtnPressed = false;  
 }
 
 void loop() {
   // put your main code here to run repeatedly:
   // read the switch:
   int switchState = digitalRead(switchPin);
-  // if it's changed and it's high, toggle the mouse state:
+  // if it's changed and it's low, toggle the mouse state:
   if (switchState != lastSwitchState) {
-    if (switchState == HIGH) {
+    if (switchState == LOW) {
       mouseIsActive = !mouseIsActive;
       // turn on LED to indicate mouse state:
       digitalWrite(ledPin, mouseIsActive);
