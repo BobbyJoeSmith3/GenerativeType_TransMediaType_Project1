@@ -1,6 +1,5 @@
-import processing.serial.*;
-
 import processing.video.*;
+
 
 /*
  * This sketch uses the text drawn to an offscreen PGraphics to determine
@@ -57,18 +56,16 @@ boolean drawGradientSelected = false; // boolean to trigger drawGradients functi
 // Can use all of Processing's default drawing commands on a PGraphics
 PGraphics pg; // initialize PGraphics instance
 
-Serial myPort; // Create object from Serial class
 
 void setup() {
   size(1280, 720, P2D); // per vertex coloring requires an OpenGL renderer
   smooth(16); // for better results
   
+  // print a string array of resolution possibilities
+  printArray(Capture.list());
+  
   video = new Capture(this, width, height, 30); //(parent, requestWidth, requestHeight, frameRate)
   video.start();
-  
-  //String portName = Serial.list()[0];
-  printArray(Serial.list());
-  myPort = new Serial(this, Serial.list()[1], 115200);
   
   pg = createGraphics(width, height, JAVA2D); // create a PGraphics the same size as the main sketch display window
   // Draw something to the created PGraphics instance called 'pg'.
@@ -85,17 +82,7 @@ void setup() {
 
 
 void draw() { 
-  // arduino data
-  byte[] inBuffer = new byte[2]; // Expand array size to the number of bytes expected
-  while (myPort.available() > 0) {
-    inBuffer = myPort.readBytes();
-    myPort.readBytes(inBuffer);
-    if (inBuffer != null) {
-      String myString = new String(inBuffer);
-      println(myString);
-    }    
-  }
-  
+    
   // draw shapes to the screen
   if (displayStroke) { strokeWeight(0.5); stroke(0);} else { noStroke(); } // toggle with 'o' key 
   if (drawShapesSelected) {drawShapes(); } // toggle with 's' key
