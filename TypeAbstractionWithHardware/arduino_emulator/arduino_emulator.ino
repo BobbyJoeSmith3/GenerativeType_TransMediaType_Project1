@@ -1,6 +1,9 @@
+#include <Mouse.h>
+
 #include <Keyboard.h>
 
 #include <Bounce2.h>
+
 
 
 //#include <Bounce2.h>   //https://github.com/thomasfredericks/Bounce2/wiki
@@ -77,9 +80,8 @@
 //#define KEY_9   0x39
 
 #define KEY_S_LOWER   0x73
-#define KEY_E_LOWER   0x65
+#define KEY_V_LOWER   0x76
 #define KEY_T_LOWER   0x74
-#define KEY_SPACEBAR  0x20
 #define KEY_C_LOWER   0x63
 #define KEY_G_LOWER   0x67
 #define KEY_F_LOWER   0x66
@@ -103,10 +105,9 @@ int buttonPins[] = {
   4,  //key o (yellow)
   5,  //key c (green)
   6,  //key t (yellow)
-  7,  //key e (green)
+  7,  //key v (green)
   8,  //key g (white)
-  9,  //key s (white)
-  10  //key   (white)
+  9   //key s (white)
 };
 
 char buttonPresets[] = { 
@@ -115,42 +116,60 @@ char buttonPresets[] = {
   KEY_O_LOWER, //button 4
   KEY_C_LOWER, //button 5
   KEY_T_LOWER, //button 6
-  KEY_E_LOWER, //button 7
+  KEY_V_LOWER, //button 7
   KEY_G_LOWER, //button 8
-  KEY_S_LOWER, //button 9
-  KEY_SPACEBAR //button 10 
+  KEY_S_LOWER //button 9
 };
 
 //========== END CONFIGURATION SETTINGS ==========
 
 // Instantiate button state array
-boolean buttonPressed[9];
+boolean buttonPressed[8];
 // Instantiate a Bounce object array to store each debouncer in
-Bounce debouncers[9];
-//Instantiate a counter array for each button to debounce count timer
-int debounceCount[9];
+Bounce debouncers[8];
+// Instantiate a counter array for each button to debounce count timer
+int debounceCount[8];
+// Instantiate a Bounce object to store mouseButton in
+Bounce mouseBtnDebouncer;
+// Instantiate mouseButton state
+boolean mouseBtnPressed;
+// Instantiate a count timer for mouseButton
+int mouseDebounceCount;
 
-int Xin = A0; // X Input Pin
-int Yin = A1; // Y Input Pin
-int Xpos;     // Store value of analog pin reading for x coordinate
-int Ypos;     // Store value of analog pin reading for y coordinate
-byte Xmap;     // Mapped value of Xpos
-byte Ymap;     // Mapped value of Ypos
-byte mappedValues[2]; // Array with mapped x and y values
+// set pin numbers for switch, joystick axes, and LED:
+const int switchPin = 11; // switch to turn on and off mouse control
+const int mouseButton = 10; // input pin for the mouse pushButton
+const int ledPin = 12;    // Mouse control LED
+const int xAxis = A0;     // joystick X axis
+const int yAxis = A1;     // joystick Y axis
+
+// paramaters for reading the joystick:
+int range = 12;           // output range of X or Y movement
+int responseDelay = 5;    // response delay of the mouse in ms
+int threshold = range /4; // resting threshold
+int center = range / 2;   // resting position value
+
+boolean mouseIsActive = false;  // whether or not to control the mouse
+int lastSwitchState = LOW;      // previous switch state
 
 void setup() {
   // put your setup code here, to run once:
+  pinMode(switchPin, INPUT_PULLUP);    // the switch pin
+  pinMode(ledPin, OUTPUT);      // the LED pin
   
    // open the serial port at 115200 baud rate and wait for port to open
-   Serial.begin(115200);
-   while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB 
-   }
+//   Serial.begin(115200);
+//   while (!Serial) {
+//    ; // wait for serial port to connect. Needed for native USB 
+//   }
+   // initialize control over the mouse
+   Mouse.begin();
+   
    // initialize control over the keyboard
    Keyboard.begin();
  
-  // Create debounce instances :
-   for (int i = 0; i < 9; i++) {
+   // Create debounce instances :
+   for (int i = 0; i < 8; i++) {
      debouncers[i] = Bounce();
      debounceCount[i] = 0;
      pinMode(buttonPins[i],INPUT_PULLUP);
@@ -159,24 +178,70 @@ void setup() {
         delay(100);
      buttonPressed[i] = false; 
    }
-     
+
+   // Create debounce instance for mouseButton:
+   mouseBtnDebouncer = Bounce();  // instantiates a bounce object
+   mouseDebounceCount = 0;
+   pinMode(mouseButton, INPUT_PULLUP);  // sets pinmode for mouseButton
+   // Set the pin and match the internal state to that of the pin:
+   // NOTE: Only attach the pin after settin gthe pin up (internal pull-up)
+   mouseBtnDebouncer.attach(mouseButton);
+   mouseBtnDebouncer.interval(BOUNCE_WAIT);
+   delay(100);
+   mouseBtnPressed = false;  
 }
 
 void loop() {
   // put your main code here to run repeatedly:
-  Xpos = analogRead(Xin);
-  Ypos = analogRead(Yin);
-  
-  // Note: need to map analog x an y position readings to byte size
-  // Serial will only transfer bytes and strings
-  Xmap = byte(map(Xpos, -1023, 0, 1023, 255));
-  Ymap = byte(map(Ypos, -1023, 0, 1023, 255));
-  mappedValues[0] = Xmap;
-  mappedValues[1] = Ymap;
-  Serial.write(mappedValues, sizeof(mappedValues));
+  // read the switch:
+  int switchState = digitalRead(switchPin);
+  // if it's changed and it's high, toggle the mouse state:
+  if (switchState != lastSwitchState) {
+    if (switchState == HIGH) {
+      mouseIsActive = !mouseIsActive;
+      // turn on LED to indicate mouse state:
+      digitalWrite(ledPin, mouseIsActive);
+    }
+  }
+  //save switch state for next comparison:
+  lastSwitchState = switchState;
+
+  // read and scale the two axes:
+  // flip x direction using mapping
+  // x and y mapped opposite of directions on joystick
+  int xReading = map(readAxis(A0), -1023, 1023, 1023, -1023);
+  int yReading = readAxis(A1);
+
+  // if the mouse state is active, move the mouse:
+  if (mouseIsActive) {
+    Mouse.move(xReading, yReading, 0);
+  }
+
+  delay(responseDelay);
+
+  // Mouse Debounce Code:
+  mouseBtnDebouncer.update(); // check current value
+  int mouseValue = mouseBtnDebouncer.read();
+  if ( mouseValue == LOW) { // if button pressed
+    if(mouseDebounceCount == BOUNCE_COUNT && mouseBtnPressed == false) { //the button has been held down long enough and it hasn't been previously registered as pressed
+      Mouse.press(MOUSE_LEFT);
+      mouseBtnPressed = true;
+    } else {
+      if(mouseDebounceCount < BOUNCE_COUNT) {
+        mouseDebounceCount++; //else increment the count
+      }
+    }
+  } else { // button is not pressed
+    if(mouseDebounceCount > 0) {
+      mouseDebounceCount--; //keep decreasing count unless 0
+    } else {
+      Mouse.release(MOUSE_LEFT); //if 0 then release button
+      mouseBtnPressed = false;
+    }
+  }
   
   // Debounce code:
-  for (int j = 0; j < 9; j++) { //iterate over each button (pin)
+  for (int j = 0; j < 8; j++) { //iterate over each button (pin)
     
      (debouncers[j]).update(); //check current value
      int value = (debouncers[j]).read();
@@ -204,7 +269,29 @@ void loop() {
       }
 
   }
-
-  
-
 }
+
+/*
+ * reads on axis (0 or 1 for x or y) and scales the
+ * analog input range to a range from 0 to <range>
+ */
+
+int readAxis(int thisAxis) {
+  // read the analog input:
+  int reading = analogRead(thisAxis);
+
+  // map the reading from the analog input range to the output range:
+  reading = map(reading, 0, 1023, 0, range);
+
+  // if the output reading is outside from the
+  // rest position threshold, use it:
+  int distance = reading - center;
+
+  if (abs(distance) < threshold) {
+    distance = 0;
+  }
+
+  // return the distance for this axis:
+  return distance;
+}
+
