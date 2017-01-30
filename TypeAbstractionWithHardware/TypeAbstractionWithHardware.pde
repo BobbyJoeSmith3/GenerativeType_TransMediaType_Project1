@@ -12,9 +12,8 @@ import processing.video.*;
  * - move the mouse around to change the grid dimensions
  * - click the mouse to flip the drawing method used for inside and outside of the text
  * - press 's' to draw shapes (either elipse or triangle)
- * - press 'e' to draw elipses
- * - press 't' to draw triangles
- * - press spacebar to take picture and use as fill color for each shape in grid
+ * - press 'v' to toggle between ellipse or triangle vectors
+ * - press 't' to take picture and use as fill color for each shape in grid
  * - press 'c' to clear picture and switch the fill color back to black
  * - press 'g' to toggle gradient
  * - press 'f' to toggle flux gradient
@@ -110,35 +109,34 @@ void mousePressed() {
 }
 
 
-void readJoystick() {
-  
-}
-
-
 
 void keyPressed() {
-  // draw ellipses if 'e' is pressed
-  if (key == 'e') {
-    ellipseSelected = true;
-    triangleSelected = false;
+  // toggle between ellipse and triangle vectors
+  if (key == 'v') {
+    ellipseSelected = !ellipseSelected;
+    triangleSelected = !triangleSelected;
   }
-  // draw triangles if 't' is pressed
+  
+  // take picture and fill
   if (key == 't') {
-    ellipseSelected = false;
-    triangleSelected = true;
-  }
-  // capture video frame if spacebar is pressed
-  if (key == ' ') {
     video.read();
     colorDefaults = false;
   }
+  
+  // randomize displayed word
+  if (key == 'r') {
+
+  }
+  
   // revert back to default colors 'c' is pressed
   if (key == 'c') {
     colorDefaults = true;
     revertToColorDefaults();
   }
+  
   // add or remove stroke if 'o' is pressed
   if (key == 'o') displayStroke = !displayStroke;
+  
   // draw gradient if 'g' is pressed
   if (key == 'g') {
     drawGradientSelected = true;
@@ -150,11 +148,13 @@ void keyPressed() {
     }
     selectGradientCounter++; 
   }
+  
   // draw shapes if 's' is pressed
   if (key == 's') {
     drawShapesSelected = true;
     drawGradientSelected = false;
   }
+  
   // trigger flux gradient if 'f' is pressed
   if (key == 'f') changeGradientSize = !changeGradientSize;
 }
